@@ -1,7 +1,6 @@
 # bili-rtmp
 
-Get the rtmp address and code of bili even if you do not have 50+ fans.  
-[《哔哩哔哩第三方开播权限排查指南》](https://www.bilibili.com/blackboard/activity-pSrb2KQb6G.html)
+Get the rtmp address (服务器) and code (推流码) of bili (B站) even if you do not have 50+ fans (≥50粉).  
 
 ## Setup
 ```
