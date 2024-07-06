@@ -7,7 +7,7 @@ Get the rtmp address and code of bili even you do not have 50+ fans.
 ```
 pip install -r requirements.txt
 ```
-and webdriver for selenium
+and (Edge and its) webdriver for selenium
 
 ## Usage
 ### 1. Login
