@@ -1,7 +1,7 @@
 # bili-rtmp
 
 Get the rtmp address (服务器) and code (推流码) of bili (B站) even if you do not have 50+ fans (≥50粉).  
-
+演示视频：[bili-rtmp 视频使用流程](https://www.bilibili.com/video/BV1VRhme8ECp)
 ## Setup
 ```
 pip install -r requirements.txt
