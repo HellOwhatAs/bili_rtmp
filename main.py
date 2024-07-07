@@ -1,9 +1,10 @@
-from selenium import webdriver
 import pickle, os, requests, json, pprint
+# ifEdge
+from selenium.webdriver import Edge as Driver
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
-
+from webdriver_manager.microsoft import EdgeChromiumDriverManager as DriverManager
+# fi
 from mitmproxy import http
 from mitmproxy.tools.main import mitmdump
 import multiprocessing, argparse
@@ -45,7 +46,7 @@ def live(command: Literal["start", "stop"]):
             print("Live stopped")
     else: raise resp
 
-class Driver(webdriver.Edge):
+class MyDriver(Driver):
     def __init__(self, options: Options = None, service: Service = None, keep_alive: bool = True) -> None:
         super().__init__(options, service, keep_alive)
     
@@ -81,11 +82,11 @@ if __name__ == "__main__":
         PORT = str(args.port)
         multiprocessing.Process(target=mitmdump, args=(['-s', __file__, "-p", PORT, '-q'],), daemon=True).start()
 
-        options = webdriver.EdgeOptions()
+        options = Options()
         options.add_argument(f'--proxy-server=http://127.0.0.1:{PORT}')
         options.add_argument('--ignore-certificate-errors')
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
-        browser = Driver(options=options, service=Service(EdgeChromiumDriverManager().install()))
+        browser = MyDriver(options=options, service=Service(DriverManager().install()))
 
         if not os.path.exists(COOKIES):
             browser.login()
