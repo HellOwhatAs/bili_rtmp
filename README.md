@@ -6,7 +6,7 @@ Get the rtmp address (服务器) and code (推流码) of bili (B站) even if you
 ```
 pip install -r requirements.txt
 ```
-and (Edge and its) webdriver for selenium
+and Edge browser
 
 ## Usage
 ### 1. Login

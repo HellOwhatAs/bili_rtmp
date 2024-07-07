@@ -2,6 +2,7 @@ from selenium import webdriver
 import pickle, os, requests, json, pprint
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 from mitmproxy import http
 from mitmproxy.tools.main import mitmdump
@@ -84,7 +85,7 @@ if __name__ == "__main__":
         options.add_argument(f'--proxy-server=http://127.0.0.1:{PORT}')
         options.add_argument('--ignore-certificate-errors')
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
-        browser = Driver(options=options)
+        browser = Driver(options=options, service=Service(EdgeChromiumDriverManager().install()))
 
         if not os.path.exists(COOKIES):
             browser.login()
