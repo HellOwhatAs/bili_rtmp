@@ -6,6 +6,7 @@ from selenium.webdriver.edge.service import Service
 from mitmproxy import http
 from mitmproxy.tools.main import mitmdump
 import multiprocessing, argparse
+from typing import Literal
 
 COOKIES = 'cookies.pkl'
 START_LIVE = "startLive"
@@ -20,41 +21,27 @@ def request(flow: http.HTTPFlow) -> None:
         with open('network_requests.txt', 'a') as f:
             f.write(f'{flow.request.method} {flow.request.url}\n')
 
-def startLive():
-    fp = f"{START_LIVE}.pkl"
+def live(command: Literal["start", "stop"]):
+    fp = f"{START_LIVE if command == 'start' else STOP_LIVE}.pkl"
     if not os.path.exists(fp): raise "Please login first"
     with open(fp, 'rb') as f:
-        start_request: http.Request = pickle.load(f)
+        request: http.Request = pickle.load(f)
 
-    headers = dict(start_request.headers)
-    headers['cookie'] = ' '.join(f'{k}={v};' for k, v in start_request.cookies.items())
+    headers = dict(request.headers)
+    headers['cookie'] = ' '.join(f'{k}={v};' for k, v in request.cookies.items())
 
     resp = requests.post(
-        start_request.url,
-        data={i[:i.find('=')]: i[i.find('=')+1:] for i in start_request.content.decode().split('&')},
+        request.url,
+        data={i[:i.find('=')]: i[i.find('=')+1:] for i in request.content.decode().split('&')},
         headers=headers
     )
 
     if resp.status_code == 200:
-        rtmp = json.loads(resp.content)['data']['rtmp']
-        pprint.pprint({k: rtmp[k] for k in ('addr', 'code')})
-    else: raise resp
-
-def stopLive():
-    with open(f"{STOP_LIVE}.pkl", 'rb') as f:
-        stop_request: http.Request = pickle.load(f)
-
-    headers = dict(stop_request.headers)
-    headers['cookie'] = ' '.join(f'{k}={v};' for k, v in stop_request.cookies.items())
-
-    resp = requests.post(
-        stop_request.url,
-        data={i[:i.find('=')]: i[i.find('=')+1:] for i in stop_request.content.decode().split('&')},
-        headers=headers
-    )
-
-    if resp.status_code == 200:
-        print("Live stopped")
+        if command == "start":
+            rtmp = json.loads(resp.content)['data']['rtmp']
+            pprint.pprint({k: rtmp[k] for k in ('addr', 'code')})
+        else:
+            print("Live stopped")
     else: raise resp
 
 class Driver(webdriver.Edge):
@@ -73,29 +60,30 @@ class Driver(webdriver.Edge):
 
     def login(self):
         self.get('https://bilibili.com/')
-        input("[Press any key after Login]")
+        input("[Press Enter after Login]")
         self.get("https://live.bilibili.com/p/html/web-hime/index.html")
         self.save_cookies(COOKIES)
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="a tool for bilibili live code")
+    parser = argparse.ArgumentParser(description="Get the rtmp address (服务器) and code (推流码) of bili (B站) even if you do not have 50+ fans (≥50粉).")
     subparsers = parser.add_subparsers(dest="command")
-    parser_login = subparsers.add_parser("login", help="login via selenium")
+    parser_login = subparsers.add_parser("login", help="Login to bili via selenium, generating `cookies.pkl`, `startLive.pkl`, and `stopLive.pkl`")
     parser_login.add_argument("-p", "--port", type=int, default=8080, help="port of mitmproxy")
-    parser_start = subparsers.add_parser("start", help="start live")
-    parser_stop = subparsers.add_parser("stop", help="stop live")
+    parser_start = subparsers.add_parser("start", help="Start live, printing `addr` (服务器) and `code` (推流码)")
+    parser_stop = subparsers.add_parser("stop", help="Stop live")
 
     args = parser.parse_args()
-    if args.command == "start": startLive()
-    elif args.command == "stop": stopLive()
+    if args.command == "start": live("start")
+    elif args.command == "stop": live("stop")
     elif args.command == "login":
         PORT = str(args.port)
-        multiprocessing.Process(target=mitmdump, args=(['-s', __file__, "-p", PORT],)).start()
+        multiprocessing.Process(target=mitmdump, args=(['-s', __file__, "-p", PORT, '-q'],), daemon=True).start()
 
         options = webdriver.EdgeOptions()
         options.add_argument(f'--proxy-server=http://127.0.0.1:{PORT}')
         options.add_argument('--ignore-certificate-errors')
+        options.add_experimental_option("excludeSwitches", ["enable-logging"])
         browser = Driver(options=options)
 
         if not os.path.exists(COOKIES):
@@ -105,6 +93,6 @@ if __name__ == "__main__":
             browser.load_cookies(COOKIES)
             browser.refresh()
         
-        input('[Press any key after "开始直播" and "结束直播"]')
+        input('[Press Enter after "开始直播" and "结束直播"]')
         browser.quit()
     else: parser.print_help()
